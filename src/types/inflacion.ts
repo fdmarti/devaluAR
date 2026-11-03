@@ -54,3 +54,6 @@ export interface ResumenAnio {
   completo: boolean
   variacionMensualPromedio: number
 }
+
+/** Dirección de una variación: 'sube' (aumentó) o 'baja' (disminuyó). */
+export type Tendencia = 'sube' | 'baja'
