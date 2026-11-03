@@ -4,11 +4,14 @@ import { obtenerSerieInflacion } from './api/inflacion'
 import { calcularResumen, calcularResumenAnual, normalizarSerie, ultimoMes } from './utils/inflacion'
 import {
   formatearAnioMesDesdeIso,
+  formatearEntero,
   formatearMesAnio,
   formatearNumeroGrande,
   formatearPorcentaje,
 } from './utils/formato'
+import { FUENTE } from './constants/fuente'
 import AppFooter from './components/AppFooter.vue'
+import StatCard from './components/StatCard.vue'
 import type { DatasetInflacion, ResumenMes } from './types/inflacion'
 
 type Estado = 'cargando' | 'error' | 'listo'
@@ -35,34 +38,58 @@ const rango = computed(() => {
   return `${formatearMesAnio(primero.clave)} → ${formatearMesAnio(ultimo.value.clave)}`
 })
 
+/** Cifra protagonista del hero: cuánto vale hoy un peso de 1943. */
+const cifraHero = computed(() => {
+  const primerMes = meses.value[0]
+  return {
+    titulo: 'Un peso de 1943 vale hoy',
+    valor: formatearNumeroGrande(
+      resumenInicial.value?.pesoActualPorPesoHistorico ?? Number.NaN,
+    ),
+    subtitulo: primerMes
+      ? `desde ${formatearMesAnio(primerMes.clave)}, en pesos actuales`
+      : '',
+  }
+})
+
+/** Fila de las tres métricas comparables. */
 const tarjetas = computed(() => {
   if (!resumen.value || !ultimo.value || !dataset.value) return []
   const primerMes = meses.value[0]
   return [
     {
-      etiqueta: 'Meses en la serie',
-      valor: String(meses.value.length),
-      detalle: `${formatearMesAnio(primerMes.clave)} → ${formatearMesAnio(ultimo.value.clave)}`,
+      titulo: 'Meses en la serie',
+      valor: formatearEntero(meses.value.length),
+      subtitulo: `${formatearMesAnio(primerMes.clave)} → ${formatearMesAnio(ultimo.value.clave)}`,
     },
     {
-      etiqueta: 'Variación mensual',
+      titulo: 'Variación mensual',
       valor: formatearPorcentaje(resumen.value.variacionMensual),
-      detalle: `último mes: ${formatearMesAnio(ultimo.value.clave)}`,
+      subtitulo: `último mes: ${formatearMesAnio(ultimo.value.clave)}`,
     },
     {
-      etiqueta: 'Variación interanual',
+      titulo: 'Variación interanual',
       valor: formatearPorcentaje(resumen.value.variacionInteranual),
-      detalle: '12 meses hasta ' + formatearMesAnio(ultimo.value.clave),
+      subtitulo: '12 meses hasta ' + formatearMesAnio(ultimo.value.clave),
+    },
+  ]
+})
+
+/** Metadatos del dataset: año inicial y fecha de generación. */
+const metadatos = computed(() => {
+  const anioInicial = resumenAnioInicial.value
+  return [
+    {
+      titulo: 'Año inicial',
+      valor: anioInicial ? String(anioInicial.anio) : '—',
+      subtitulo: anioInicial
+        ? `${anioInicial.completo ? 'completo' : 'incompleto'} · ${anioInicial.mesesIncluidos} meses`
+        : '',
     },
     {
-      etiqueta: 'Factor acumulado',
-      valor: formatearNumeroGrande(resumen.value.factorAcumulado),
-      detalle: `desde ${formatearMesAnio(primerMes.clave)}`,
-    },
-    {
-      etiqueta: 'Un peso de 1943 vale hoy',
-      valor: formatearNumeroGrande(resumenInicial.value?.pesoActualPorPesoHistorico ?? Number.NaN),
-      detalle: `desde ${formatearMesAnio(primerMes.clave)}, en pesos actuales`,
+      titulo: 'Dataset generado',
+      valor: dataset.value ? formatearAnioMesDesdeIso(dataset.value.generatedAt) : '—',
+      subtitulo: '',
     },
   ]
 })
@@ -85,7 +112,7 @@ onMounted(cargar)
 
 <template>
   <div class="flex min-h-screen flex-col bg-surface text-ink">
-    <main class="mx-auto w-full max-w-3xl flex-1 px-6 py-16">
+    <main class="mx-auto w-full max-w-4xl flex-1 px-6 py-16">
       <header class="mb-14 border-b border-line pb-10">
         <p class="text-xs font-semibold uppercase tracking-[0.35em] text-accent">
           devaluar
@@ -104,7 +131,7 @@ onMounted(cargar)
       <!-- Carga -->
       <div
         v-if="estado === 'cargando'"
-        class="flex items-center gap-3 border border-line bg-surface-muted p-6 text-ink-muted"
+        class="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted p-8 text-ink-muted"
         role="status"
       >
         <span
@@ -117,7 +144,7 @@ onMounted(cargar)
       <!-- Error -->
       <div
         v-else-if="estado === 'error'"
-        class="border border-line bg-surface-muted p-8"
+        class="rounded-2xl border border-line bg-surface-muted p-8"
         role="alert"
       >
         <h2 class="font-serif text-2xl font-semibold tracking-tight">
@@ -126,7 +153,7 @@ onMounted(cargar)
         <p class="mt-3 text-sm text-ink-muted">{{ mensajeError }}</p>
         <button
           type="button"
-          class="mt-6 border border-accent px-4 py-2 text-sm font-medium text-accent transition hover:bg-accent hover:text-surface"
+          class="mt-6 rounded-lg border border-accent px-4 py-2 text-sm font-medium text-accent transition hover:bg-accent hover:text-surface"
           @click="cargar"
         >
           Reintentar
@@ -134,71 +161,74 @@ onMounted(cargar)
       </div>
 
       <!-- Listo -->
-      <div v-else class="space-y-12">
-        <section class="grid gap-4">
-          <article
-            v-for="tarjeta in tarjetas.slice(0, 1)"
-            :key="tarjeta.etiqueta"
-            class="border-b border-line pb-8"
+      <div v-else class="space-y-16">
+        <!-- Cifra protagonista -->
+        <section>
+          <p
+            class="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-accent"
           >
-            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
-              {{ tarjeta.etiqueta }}
-            </p>
-            <p
-              class="mt-4 font-serif text-5xl leading-none font-semibold break-words tabular-nums sm:text-6xl"
-            >
-              {{ tarjeta.valor }}
-            </p>
-            <p class="mt-3 text-sm text-ink-muted">{{ tarjeta.detalle }}</p>
-          </article>
-
-          <div class="grid gap-4 sm:grid-cols-2">
-            <article
-              v-for="tarjeta in tarjetas.slice(1)"
-              :key="tarjeta.etiqueta"
-              class="border-t border-line pt-5"
-            >
-              <p class="text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
-                {{ tarjeta.etiqueta }}
-              </p>
-              <p class="mt-3 font-serif text-3xl leading-none font-semibold break-words tabular-nums">
-                {{ tarjeta.valor }}
-              </p>
-              <p class="mt-2 text-xs text-ink-muted">{{ tarjeta.detalle }}</p>
-            </article>
-          </div>
+            {{ cifraHero.titulo }}
+          </p>
+          <p
+            class="mt-4 font-serif text-5xl leading-none font-semibold break-words tabular-nums sm:text-6xl"
+          >
+            {{ cifraHero.valor }}
+          </p>
+          <p class="mt-3 text-sm text-ink-muted">{{ cifraHero.subtitulo }}</p>
         </section>
 
-        <section class="border-t border-line pt-6">
+        <!-- Métricas -->
+        <section class="grid gap-4 md:grid-cols-3">
+          <StatCard
+            v-for="tarjeta in tarjetas"
+            :key="tarjeta.titulo"
+            :titulo="tarjeta.titulo"
+            :valor="tarjeta.valor"
+            :subtitulo="tarjeta.subtitulo"
+          />
+        </section>
+
+        <!-- Cifras de control -->
+        <section>
           <h2 class="text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
             Cifras de control
           </h2>
-          <dl class="mt-4 grid gap-4 sm:grid-cols-2">
-            <div class="border-t border-line pt-3">
-              <dt class="text-xs uppercase tracking-widest text-ink-muted">Año inicial</dt>
-              <dd class="mt-1 tabular-nums">
-                {{ resumenAnioInicial?.anio ?? '—' }} ·
-                {{ resumenAnioInicial?.completo ? 'completo' : 'incompleto' }} ·
-                {{ resumenAnioInicial?.mesesIncluidos ?? '—' }} meses
-              </dd>
-            </div>
-            <div class="border-t border-line pt-3">
-              <dt class="text-xs uppercase tracking-widest text-ink-muted">
-                Dataset generado
-              </dt>
-              <dd class="mt-1 tabular-nums">
-                {{ dataset ? formatearAnioMesDesdeIso(dataset.generatedAt) : '—' }}
-              </dd>
-            </div>
-            <div class="border-t border-line pt-3">
-              <dt class="text-xs uppercase tracking-widest text-ink-muted">Licencia</dt>
-              <dd class="mt-1">{{ dataset?.licenseName ?? '—' }}</dd>
-            </div>
-            <div class="border-t border-line pt-3">
-              <dt class="text-xs uppercase tracking-widest text-ink-muted">Fuente</dt>
-              <dd class="mt-1">{{ dataset?.source ?? '—' }}</dd>
-            </div>
-          </dl>
+          <div class="mt-4 grid gap-4 md:grid-cols-2">
+            <StatCard
+              v-for="metadato in metadatos"
+              :key="metadato.titulo"
+              :titulo="metadato.titulo"
+              :valor="metadato.valor"
+              :subtitulo="metadato.subtitulo"
+            />
+          </div>
+
+          <p class="mt-6 text-sm leading-relaxed text-ink-muted">
+            Fuente:
+            <a
+              class="text-accent underline underline-offset-4 hover:no-underline"
+              :href="FUENTE.origenUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              >{{ FUENTE.origen }}</a
+            >,
+            recolectado por
+            <a
+              class="text-accent underline underline-offset-4 hover:no-underline"
+              :href="FUENTE.recolectorUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              >{{ FUENTE.recolector }}</a
+            >
+            ·
+            <a
+              class="text-accent underline underline-offset-4 hover:no-underline"
+              :href="FUENTE.datasetUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              >dataset original</a
+            >
+          </p>
         </section>
       </div>
     </main>

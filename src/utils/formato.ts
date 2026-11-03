@@ -17,6 +17,15 @@ export function formatearPorcentaje(valor: number, decimales = 1): string {
 }
 
 /**
+ * Formatea un entero con separador de miles es-AR: `1003` → `1.003`.
+ * Los valores no finitos devuelven `—`.
+ */
+export function formatearEntero(valor: number): string {
+  if (!Number.isFinite(valor)) return '—'
+  return new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 0 }).format(valor)
+}
+
+/**
  * Formatea un número muy grande de forma legible.
  *
  * Por debajo de 1e15 usa notación compacta (`4,08 B`). A partir de 1e15 cae a
