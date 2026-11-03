@@ -17,6 +17,10 @@
   /* Acento editorial (ocre quemado, distinto del celeste de marca) */
   --accent: #b45309;
 
+  /* Dirección del dato (no juicio de valor): una suba de inflación es mala */
+  --alza: #b91c1c; /* rojo: la variación subió */
+  --baja: #15803d; /* verde: la variación bajó */
+
   /* Escala de marca (celeste argentino) */
   --brand-50: #eff8ff;
   --brand-100: #dbeefe;
@@ -46,6 +50,9 @@
 
     --accent: #f0b45e;
 
+    --alza: #f87171;
+    --baja: #4ade80;
+
     --brand-50: #10203a;
     --brand-100: #12294b;
     --brand-200: #143761;
@@ -66,6 +73,8 @@
   --color-ink-muted: var(--ink-muted);
   --color-line: var(--line);
   --color-accent: var(--accent);
+  --color-alza: var(--alza);
+  --color-baja: var(--baja);
 
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);

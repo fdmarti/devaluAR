@@ -1,4 +1,10 @@
-import type { DatasetInflacion, MesInflacion, ResumenAnio, ResumenMes } from '../types/inflacion'
+import type {
+  DatasetInflacion,
+  MesInflacion,
+  ResumenAnio,
+  ResumenMes,
+  Tendencia,
+} from '../types/inflacion'
 
 /** Deriva la clave 'YYYY-MM' de una fecha 'YYYY-MM-DD'. */
 export function claveDesdeFecha(fecha: string): string {
@@ -76,6 +82,33 @@ export function calcularResumen(meses: MesInflacion[], clave: string): ResumenMe
     variacionAcumuladaDesdeInicio,
     pesoActualPorPesoHistorico,
   }
+}
+
+/**
+ * Dirección de una variación: 'sube' si es positiva, 'baja' si es negativa.
+ *
+ * Devuelve `null` cuando no hay dirección que dibujar: variación de 0 exacto
+ * (ni sube ni baja) o valor no finito.
+ */
+export function tendenciaDeVariacion(valor: number): Tendencia | null {
+  if (!Number.isFinite(valor) || valor === 0) return null
+  return valor > 0 ? 'sube' : 'baja'
+}
+
+/**
+ * Diferencia en puntos porcentuales entre una variación y la del período
+ * anterior: `valorActual − valorAnterior`.
+ *
+ * Devuelve `null` si alguno de los dos valores no es finito (no hay
+ * comparación posible). Una diferencia de `0` es válida: la dirección la
+ * decide `tendenciaDeVariacion`.
+ */
+export function diferenciaDeVariacion(
+  valorActual: number,
+  valorAnterior: number,
+): number | null {
+  if (!Number.isFinite(valorActual) || !Number.isFinite(valorAnterior)) return null
+  return valorActual - valorAnterior
 }
 
 /**
