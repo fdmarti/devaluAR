@@ -1,125 +1,125 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { obtenerSerieInflacion } from './api/inflacion'
+import { fetchInflationSeries } from './api/inflation'
 import {
-  calcularResumen,
-  calcularResumenAnual,
-  normalizarSerie,
-  ultimoMes,
-} from './utils/inflacion'
+  computeMonthSummary,
+  computeYearSummary,
+  latestMonth,
+  normalizeSeries,
+} from './utils/inflation'
 import {
-  formatearAnioMesDesdeIso,
-  formatearEntero,
-  formatearMesAnio,
-  formatearNumeroGrande,
-  formatearPorcentaje,
-} from './utils/formato'
-import { FUENTE } from './constants/fuente'
+  formatInteger,
+  formatLargeNumber,
+  formatMonthYear,
+  formatPercentage,
+  formatYearMonthFromIso,
+} from './utils/format'
+import { SOURCE } from './constants/source'
 import { AppFooter, StatCard } from './components'
-import type { DatasetInflacion, ResumenMes } from './types/inflacion'
-import type { Tarjeta } from './types/tarjeta.ts'
-import { variacionConDiferencia } from './utils/diff.ts'
+import type { InflationDataset, MonthSummary } from './types/inflation'
+import type { StatCardData } from './types/card'
+import { variationWithDifference } from './utils/diff'
 
-type Estado = 'cargando' | 'error' | 'listo'
+type LoadStatus = 'loading' | 'error' | 'ready'
 
-const estado = ref<Estado>('listo')
-const mensajeError = ref('')
-const dataset = ref<DatasetInflacion | null>(null)
+const status = ref<LoadStatus>('ready')
+const errorMessage = ref('')
+const dataset = ref<InflationDataset | null>(null)
 
-const meses = computed(() => (dataset.value ? normalizarSerie(dataset.value) : []))
-const ultimo = computed(() => ultimoMes(meses.value))
-const resumen = computed<ResumenMes | null>(() =>
-  ultimo.value ? calcularResumen(meses.value, ultimo.value.clave) : null,
+const months = computed(() => (dataset.value ? normalizeSeries(dataset.value) : []))
+const latest = computed(() => latestMonth(months.value))
+const summary = computed<MonthSummary | null>(() =>
+  latest.value ? computeMonthSummary(months.value, latest.value.key) : null,
 )
-/** Resumen del mes anterior al último, para comparar las variaciones. */
-const resumenAnterior = computed<ResumenMes | null>(() => {
-  const penultimo = meses.value.length > 1 ? meses.value[meses.value.length - 2] : undefined
-  return penultimo ? calcularResumen(meses.value, penultimo.clave) : null
+/** Summary of the month before the last one, to compare the changes. */
+const previousSummary = computed<MonthSummary | null>(() => {
+  const previousMonth = months.value.length > 1 ? months.value[months.value.length - 2] : undefined
+  return previousMonth ? computeMonthSummary(months.value, previousMonth.key) : null
 })
-const resumenInicial = computed<ResumenMes | null>(() =>
-  meses.value.length > 0 ? calcularResumen(meses.value, meses.value[0].clave) : null,
+const initialSummary = computed<MonthSummary | null>(() =>
+  months.value.length > 0 ? computeMonthSummary(months.value, months.value[0].key) : null,
 )
-const resumenAnioInicial = computed(() =>
-  meses.value.length > 0 ? calcularResumenAnual(meses.value, meses.value[0].anio) : null,
+const initialYearSummary = computed(() =>
+  months.value.length > 0 ? computeYearSummary(months.value, months.value[0].year) : null,
 )
 
-const rango = computed(() => {
-  const primero = meses.value[0]
-  if (!primero || !ultimo.value) return '—'
-  return `${formatearMesAnio(primero.clave)} → ${formatearMesAnio(ultimo.value.clave)}`
+const dateRange = computed(() => {
+  const first = months.value[0]
+  if (!first || !latest.value) return '—'
+  return `${formatMonthYear(first.key)} → ${formatMonthYear(latest.value.key)}`
 })
 
-/** Cifra protagonista del hero: cuánto vale hoy un peso de 1943. */
-const cifraHero = computed(() => {
-  const primerMes = meses.value[0]
+/** Hero figure: how much one peso of 1943 is worth today. */
+const heroFigure = computed(() => {
+  const firstMonth = months.value[0]
   return {
-    titulo: 'Un peso de 1943 vale hoy',
-    valor: formatearNumeroGrande(
-      resumenInicial.value?.pesoActualPorPesoHistorico ?? Number.NaN,
+    title: 'Un peso de 1943 vale hoy',
+    value: formatLargeNumber(
+      initialSummary.value?.currentValueOfHistoricalPeso ?? Number.NaN,
     ),
-    subtitulo: primerMes
-      ? `desde ${formatearMesAnio(primerMes.clave)}, en pesos actuales`
+    subtitle: firstMonth
+      ? `desde ${formatMonthYear(firstMonth.key)}, en pesos actuales`
       : '',
   }
 })
 
-/** Fila de las tres métricas comparables. */
-const tarjetas = computed<Tarjeta[]>(() => {
-  if (!resumen.value || !ultimo.value || !dataset.value) return []
-  const primerMes = meses.value[0]
-  const anterior = resumenAnterior.value
+/** Row of the three comparable metrics. */
+const cards = computed<StatCardData[]>(() => {
+  if (!summary.value || !latest.value || !dataset.value) return []
+  const firstMonth = months.value[0]
+  const previous = previousSummary.value
 
-  const mensual = variacionConDiferencia(
-    resumen.value.variacionMensual,
-    anterior?.variacionMensual,
+  const monthly = variationWithDifference(
+    summary.value.monthlyChange,
+    previous?.monthlyChange,
   )
-  const interanual = variacionConDiferencia(
-    resumen.value.variacionInteranual,
-    anterior?.variacionInteranual,
+  const yearOverYear = variationWithDifference(
+    summary.value.yearOverYearChange,
+    previous?.yearOverYearChange,
   )
 
   return [
     {
-      titulo: 'Meses en la serie',
-      valor: formatearEntero(meses.value.length),
-      subtitulo: `${formatearMesAnio(primerMes.clave)} → ${formatearMesAnio(ultimo.value.clave)}`,
+      title: 'Meses en la serie',
+      value: formatInteger(months.value.length),
+      subtitle: `${formatMonthYear(firstMonth.key)} → ${formatMonthYear(latest.value.key)}`,
     },
     {
-      titulo: 'Variación mensual',
-      valor: formatearPorcentaje(resumen.value.variacionMensual),
-      subtitulo: `último mes: ${formatearMesAnio(ultimo.value.clave)}`,
-      ...mensual,
+      title: 'Variación mensual',
+      value: formatPercentage(summary.value.monthlyChange),
+      subtitle: `último mes: ${formatMonthYear(latest.value.key)}`,
+      ...monthly,
     },
     {
-      titulo: 'Variación interanual',
-      valor: formatearPorcentaje(resumen.value.variacionInteranual),
-      subtitulo: '12 meses hasta ' + formatearMesAnio(ultimo.value.clave),
-      ...interanual,
+      title: 'Variación interanual',
+      value: formatPercentage(summary.value.yearOverYearChange),
+      subtitle: '12 meses hasta ' + formatMonthYear(latest.value.key),
+      ...yearOverYear,
     },
   ]
 })
 
-/** Metadatos del dataset: año inicial y fecha de generación. */
-const metadatos = computed(() => {
-  const anioInicial = resumenAnioInicial.value
+/** Dataset metadata: first year and generation date. */
+const metadata = computed(() => {
+  const firstYear = initialYearSummary.value
   return [
     {
-      titulo: 'Año inicial',
-      valor: anioInicial ? String(anioInicial.anio) : '—',
-      subtitulo: anioInicial
-        ? `${anioInicial.completo ? 'completo' : 'incompleto'} · ${anioInicial.mesesIncluidos} meses`
+      title: 'Año inicial',
+      value: firstYear ? String(firstYear.year) : '—',
+      subtitle: firstYear
+        ? `${firstYear.complete ? 'completo' : 'incompleto'} · ${firstYear.includedMonths} meses`
         : '',
     },
     {
-      titulo: 'Dataset generado',
-      valor: dataset.value ? formatearAnioMesDesdeIso(dataset.value.generatedAt) : '—',
-      subtitulo: '',
+      title: 'Dataset generado',
+      value: dataset.value ? formatYearMonthFromIso(dataset.value.generatedAt) : '—',
+      subtitle: '',
     },
   ]
 })
 
 const loadSeriesData = async () => {
-  dataset.value = await obtenerSerieInflacion()
+  dataset.value = await fetchInflationSeries()
 }
 
 onMounted(async () => {
@@ -138,13 +138,13 @@ onMounted(async () => {
           Inflación histórica del peso argentino
         </h1>
         <p class="mt-5 max-w-2xl text-base leading-relaxed text-ink-muted">
-          Serie mensual de IPC ({{ rango }}), calculada sobre el dataset de
+          Serie mensual de IPC ({{ dateRange }}), calculada sobre el dataset de
           hacecuentas.com (fuente INDEC).
         </p>
       </header>
 
-      <!-- Carga -->
-      <div v-if="estado == 'cargando'"
+      <!-- Loading -->
+      <div v-if="status == 'loading'"
         class="flex items-center gap-3 rounded-2xl border border-line bg-surface-muted p-8 text-ink-muted"
         role="status">
         <span class="size-5 animate-spin rounded-full border-2 border-line border-t-accent" aria-hidden="true" />
@@ -152,11 +152,11 @@ onMounted(async () => {
       </div>
 
       <!-- Error -->
-      <div v-else-if="estado === 'error'" class="rounded-2xl border border-line bg-surface-muted p-8" role="alert">
+      <div v-else-if="status === 'error'" class="rounded-2xl border border-line bg-surface-muted p-8" role="alert">
         <h2 class="font-serif text-2xl font-semibold tracking-tight">
           No se pudo cargar la información
         </h2>
-        <p class="mt-3 text-sm text-ink-muted">{{ mensajeError }}</p>
+        <p class="mt-3 text-sm text-ink-muted">{{ errorMessage }}</p>
         <button type="button"
           class="mt-6 rounded-lg border border-accent px-4 py-2 text-sm font-medium text-accent transition hover:bg-accent hover:text-surface"
           @click="loadSeriesData">
@@ -164,45 +164,45 @@ onMounted(async () => {
         </button>
       </div>
 
-      <!-- Listo -->
+      <!-- Ready -->
       <div v-else class="space-y-16">
-        <!-- Cifra protagonista -->
+        <!-- Hero figure -->
         <section>
           <p class="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-accent">
-            {{ cifraHero.titulo }}
+            {{ heroFigure.title }}
           </p>
           <p class="mt-4 font-serif text-5xl leading-none font-semibold break-words tabular-nums sm:text-6xl">
-            {{ cifraHero.valor }}
+            {{ heroFigure.value }}
           </p>
-          <p class="mt-3 text-sm text-ink-muted">{{ cifraHero.subtitulo }}</p>
+          <p class="mt-3 text-sm text-ink-muted">{{ heroFigure.subtitle }}</p>
         </section>
 
-        <!-- Métricas -->
+        <!-- Metrics -->
         <section class="grid gap-4 md:grid-cols-3">
-          <StatCard v-for="tarjeta in tarjetas" :key="tarjeta.titulo" :titulo="tarjeta.titulo" :valor="tarjeta.valor"
-            :subtitulo="tarjeta.subtitulo" :tendencia="tarjeta.tendencia"
-            :tendencia-descripcion="tarjeta.tendenciaDescripcion" :diferencia="tarjeta.diferencia" />
+          <StatCard v-for="card in cards" :key="card.title" :title="card.title" :value="card.value"
+            :subtitle="card.subtitle" :trend="card.trend"
+            :trend-description="card.trendDescription" :difference="card.difference" />
         </section>
 
-        <!-- Cifras de control -->
+        <!-- Control figures -->
         <section>
           <h2 class="text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
             Cifras de control
           </h2>
           <div class="mt-4 grid gap-4 md:grid-cols-2">
-            <StatCard v-for="metadato in metadatos" :key="metadato.titulo" :titulo="metadato.titulo"
-              :valor="metadato.valor" :subtitulo="metadato.subtitulo" />
+            <StatCard v-for="metadataItem in metadata" :key="metadataItem.title" :title="metadataItem.title"
+              :value="metadataItem.value" :subtitle="metadataItem.subtitle" />
           </div>
 
           <p class="mt-6 text-sm leading-relaxed text-ink-muted">
             Fuente:
-            <a class="text-accent underline underline-offset-4 hover:no-underline" :href="FUENTE.origenUrl"
-              target="_blank" rel="noopener noreferrer">{{ FUENTE.origen }}</a>,
+            <a class="text-accent underline underline-offset-4 hover:no-underline" :href="SOURCE.originUrl"
+              target="_blank" rel="noopener noreferrer">{{ SOURCE.origin }}</a>,
             recolectado por
-            <a class="text-accent underline underline-offset-4 hover:no-underline" :href="FUENTE.recolectorUrl"
-              target="_blank" rel="noopener noreferrer">{{ FUENTE.recolector }}</a>
+            <a class="text-accent underline underline-offset-4 hover:no-underline" :href="SOURCE.collectorUrl"
+              target="_blank" rel="noopener noreferrer">{{ SOURCE.collector }}</a>
             ·
-            <a class="text-accent underline underline-offset-4 hover:no-underline" :href="FUENTE.datasetUrl"
+            <a class="text-accent underline underline-offset-4 hover:no-underline" :href="SOURCE.datasetUrl"
               target="_blank" rel="noopener noreferrer">dataset original</a>
           </p>
         </section>

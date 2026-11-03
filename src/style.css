@@ -3,25 +3,25 @@
 :root {
   color-scheme: light dark;
 
-  /* Superficies */
+  /* Surfaces */
   --surface: #ffffff;
   --surface-muted: #f4f5f7;
 
-  /* Tinta */
+  /* Ink */
   --ink: #111827;
   --ink-muted: #6b7280;
 
-  /* Líneas */
+  /* Lines */
   --line: #e5e7eb;
 
-  /* Acento editorial (ocre quemado, distinto del celeste de marca) */
+  /* Editorial accent (burnt ochre, different from the brand sky blue) */
   --accent: #b45309;
 
-  /* Dirección del dato (no juicio de valor): una suba de inflación es mala */
-  --alza: #b91c1c; /* rojo: la variación subió */
-  --baja: #15803d; /* verde: la variación bajó */
+  /* Direction of the data (not a value judgement): a rise in inflation is bad */
+  --rise: #b91c1c; /* red: the change went up */
+  --fall: #15803d; /* green: the change went down */
 
-  /* Escala de marca (celeste argentino) */
+  /* Brand scale (Argentine sky blue) */
   --brand-50: #eff8ff;
   --brand-100: #dbeefe;
   --brand-200: #bfe2fe;
@@ -50,8 +50,8 @@
 
     --accent: #f0b45e;
 
-    --alza: #f87171;
-    --baja: #4ade80;
+    --rise: #f87171;
+    --fall: #4ade80;
 
     --brand-50: #10203a;
     --brand-100: #12294b;
@@ -73,8 +73,8 @@
   --color-ink-muted: var(--ink-muted);
   --color-line: var(--line);
   --color-accent: var(--accent);
-  --color-alza: var(--alza);
-  --color-baja: var(--baja);
+  --color-rise: var(--rise);
+  --color-fall: var(--fall);
 
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
