@@ -1,26 +1,26 @@
-import type { Tarjeta } from "../types/tarjeta"
-import { formatearPorcentaje } from "./formato"
-import { diferenciaDeVariacion, tendenciaDeVariacion } from "./inflacion"
+import type { StatCardData } from '../types/card'
+import { formatPercentage, formatTrendDescription } from './format'
+import { differenceBetween, trendFromValue } from './inflation'
 
 /**
- * Dirección y diferencia de una variación frente al mes anterior.
+ * Direction and difference of a change against the previous month.
  *
- * La flecha describe cómo **cambió** la variación, no si es positiva: si la
- * variación mensual subió de 1,7 % a 1,9 %, la diferencia es `+0,2` y la
- * flecha es roja hacia arriba. Sin diferencia calculable no hay flecha.
+ * The arrow describes how the change **moved**, not whether it is positive: if
+ * the monthly change went from 1,7 % to 1,9 %, the difference is `+0,2` and the
+ * arrow points up in red. Without a computable difference there is no arrow.
  */
-export function variacionConDiferencia(
-    valorActual: number,
-    valorAnterior: number | undefined,
-): Pick<Tarjeta, 'tendencia' | 'tendenciaDescripcion' | 'diferencia'> {
-    if (valorAnterior === undefined) return {}
-    const diferencia = diferenciaDeVariacion(valorActual, valorAnterior)
-    if (diferencia === null) return {}
-    const tendencia = tendenciaDeVariacion(diferencia)
-    if (!tendencia) return {}
-    return {
-        tendencia,
-        tendenciaDescripcion: `${tendencia} respecto al mes anterior`,
-        diferencia: formatearPorcentaje(diferencia),
-    }
+export function variationWithDifference(
+  currentValue: number,
+  previousValue: number | undefined,
+): Pick<StatCardData, 'trend' | 'trendDescription' | 'difference'> {
+  if (previousValue === undefined) return {}
+  const difference = differenceBetween(currentValue, previousValue)
+  if (difference === null) return {}
+  const trend = trendFromValue(difference)
+  if (!trend) return {}
+  return {
+    trend,
+    trendDescription: formatTrendDescription(trend, 'respecto al mes anterior'),
+    difference: formatPercentage(difference),
+  }
 }

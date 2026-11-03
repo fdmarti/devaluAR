@@ -1,26 +1,27 @@
 <script setup lang="ts">
 /**
- * Flecha de tendencia de una variación: hacia arriba si sube, hacia abajo si
- * baja, acompañada de la diferencia respecto del período anterior.
+ * Trend arrow for a change: up when it rose, down when it fell, accompanied by
+ * the difference against the previous period.
  *
- * Componente presentacional puro: no formatea nada y no conoce el dominio,
- * solo dibuja la dirección y el número que le pasan.
+ * Purely presentational component: it formats nothing and does not know the
+ * domain, it only draws the direction and the number it is given.
  */
 import { computed } from 'vue'
-import type { Tendencia } from '../types/inflacion'
+import { formatTrendLabel } from '../utils/format'
+import type { Trend } from '../types/inflation'
 
 const props = defineProps<{
-  /** Dirección a dibujar. Determina el color: 'sube' → rojo, 'baja' → verde. */
-  tendencia: Tendencia
-  /** Texto accesible. Si falta, se usa 'sube' o 'baja'. */
-  descripcion?: string
-  /** Diferencia ya formateada que se dibuja junto a la flecha (`+0,2 %`). */
-  diferencia?: string
+  /** Direction to draw. It sets the color: 'up' → red, 'down' → green. */
+  trend: Trend
+  /** Accessible text. Falls back to the Spanish label of the direction. */
+  description?: string
+  /** Already formatted difference drawn next to the arrow (`+0,2 %`). */
+  difference?: string
 }>()
 
-const color = computed(() => (props.tendencia === 'sube' ? 'text-alza' : 'text-baja'))
+const color = computed(() => (props.trend === 'up' ? 'text-rise' : 'text-fall'))
 
-const textoAccesible = computed(() => props.descripcion ?? props.tendencia)
+const accessibleText = computed(() => props.description ?? formatTrendLabel(props.trend))
 </script>
 
 <template>
@@ -31,12 +32,12 @@ const textoAccesible = computed(() => props.descripcion ?? props.tendencia)
       fill="currentColor"
       aria-hidden="true"
     >
-      <path v-if="props.tendencia === 'sube'" d="M12 2 L22 22 H2 Z" />
+      <path v-if="props.trend === 'up'" d="M12 2 L22 22 H2 Z" />
       <path v-else d="M12 22 L2 2 H22 Z" />
     </svg>
-    <span v-if="props.diferencia" class="text-[0.5em] leading-none font-semibold">
-      {{ props.diferencia }}
+    <span v-if="props.difference" class="text-[0.5em] leading-none font-semibold">
+      {{ props.difference }}
     </span>
-    <span class="sr-only">{{ textoAccesible }}</span>
+    <span class="sr-only">{{ accessibleText }}</span>
   </span>
 </template>
