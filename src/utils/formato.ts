@@ -1,3 +1,5 @@
+import { format, isValid, parse, parseISO } from 'date-fns'
+
 const LOCALE = 'es-AR'
 
 /**
@@ -35,6 +37,36 @@ export function formatearNumeroGrande(valor: number): string {
     maximumFractionDigits: 2,
   }).format(valor)
   return compacto
+}
+
+/**
+ * Convierte la clave interna `YYYY-MM` en `MM/yyyy` para mostrar.
+ * Devuelve `—` si la clave no tiene el formato esperado.
+ *
+ * La clave se parsea con `parse(clave, 'yyyy-MM', ...)`, no con `new Date(clave)`:
+ * `new Date` interpreta la cadena como UTC y en zonas horarias negativas se corre
+ * un día. `parse` usa la zona local y devuelve el día 1 del mes.
+ */
+export function formatearMesAnio(clave: string): string {
+  const fecha = parse(clave, 'yyyy-MM', new Date())
+  if (!isValid(fecha)) return '—'
+  return format(fecha, 'MM/yyyy')
+}
+
+/** Formatea una fecha como `dd/MM/yyyy` en zona horaria local. */
+export function formatearFecha(fecha: Date): string {
+  if (!isValid(fecha)) return '—'
+  return format(fecha, 'dd/MM/yyyy')
+}
+
+/**
+ * Convierte un timestamp ISO en `MM/yyyy`.
+ * Devuelve `—` si no parsea.
+ */
+export function formatearAnioMesDesdeIso(iso: string): string {
+  const fecha = parseISO(iso)
+  if (!isValid(fecha)) return '—'
+  return format(fecha, 'MM/yyyy')
 }
 
 const SUPERINDICES: Record<string, string> = {

@@ -2,7 +2,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { obtenerSerieInflacion } from './api/inflacion'
 import { calcularResumen, calcularResumenAnual, normalizarSerie, ultimoMes } from './utils/inflacion'
-import { formatearNumeroGrande, formatearPorcentaje } from './utils/formato'
+import {
+  formatearAnioMesDesdeIso,
+  formatearMesAnio,
+  formatearNumeroGrande,
+  formatearPorcentaje,
+} from './utils/formato'
+import AppFooter from './components/AppFooter.vue'
 import type { DatasetInflacion, ResumenMes } from './types/inflacion'
 
 type Estado = 'cargando' | 'error' | 'listo'
@@ -23,6 +29,12 @@ const resumenAnioInicial = computed(() =>
   meses.value.length > 0 ? calcularResumenAnual(meses.value, meses.value[0].anio) : null,
 )
 
+const rango = computed(() => {
+  const primero = meses.value[0]
+  if (!primero || !ultimo.value) return '—'
+  return `${formatearMesAnio(primero.clave)} → ${formatearMesAnio(ultimo.value.clave)}`
+})
+
 const tarjetas = computed(() => {
   if (!resumen.value || !ultimo.value || !dataset.value) return []
   const primerMes = meses.value[0]
@@ -30,27 +42,27 @@ const tarjetas = computed(() => {
     {
       etiqueta: 'Meses en la serie',
       valor: String(meses.value.length),
-      detalle: `${primerMes.clave} → ${ultimo.value.clave}`,
+      detalle: `${formatearMesAnio(primerMes.clave)} → ${formatearMesAnio(ultimo.value.clave)}`,
     },
     {
       etiqueta: 'Variación mensual',
       valor: formatearPorcentaje(resumen.value.variacionMensual),
-      detalle: `último mes: ${ultimo.value.clave}`,
+      detalle: `último mes: ${formatearMesAnio(ultimo.value.clave)}`,
     },
     {
       etiqueta: 'Variación interanual',
       valor: formatearPorcentaje(resumen.value.variacionInteranual),
-      detalle: '12 meses hasta ' + ultimo.value.clave,
+      detalle: '12 meses hasta ' + formatearMesAnio(ultimo.value.clave),
     },
     {
       etiqueta: 'Factor acumulado',
       valor: formatearNumeroGrande(resumen.value.factorAcumulado),
-      detalle: `desde ${primerMes.clave}`,
+      detalle: `desde ${formatearMesAnio(primerMes.clave)}`,
     },
     {
       etiqueta: 'Un peso de 1943 vale hoy',
       valor: formatearNumeroGrande(resumenInicial.value?.pesoActualPorPesoHistorico ?? Number.NaN),
-      detalle: `desde ${primerMes.clave}, en pesos actuales`,
+      detalle: `desde ${formatearMesAnio(primerMes.clave)}, en pesos actuales`,
     },
   ]
 })
@@ -72,27 +84,31 @@ onMounted(cargar)
 </script>
 
 <template>
-  <div class="min-h-screen bg-surface text-ink font-sans">
-    <main class="mx-auto max-w-3xl px-6 py-16">
-      <header class="mb-10">
-        <p class="text-sm font-medium uppercase tracking-widest text-brand-600">devaluar</p>
-        <h1 class="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+  <div class="flex min-h-screen flex-col bg-surface text-ink">
+    <main class="mx-auto w-full max-w-3xl flex-1 px-6 py-16">
+      <header class="mb-14 border-b border-line pb-10">
+        <p class="text-xs font-semibold uppercase tracking-[0.35em] text-accent">
+          devaluar
+        </p>
+        <h1
+          class="mt-4 font-serif text-4xl leading-[1.05] font-semibold tracking-tight sm:text-5xl"
+        >
           Inflación histórica del peso argentino
         </h1>
-        <p class="mt-3 text-ink-muted">
-          Serie mensual de IPC (1943-03 → 2026-09), calculada sobre el dataset de hacecuentas.com
-          (fuente INDEC).
+        <p class="mt-5 max-w-2xl text-base leading-relaxed text-ink-muted">
+          Serie mensual de IPC ({{ rango }}), calculada sobre el dataset de
+          hacecuentas.com (fuente INDEC).
         </p>
       </header>
 
       <!-- Carga -->
       <div
         v-if="estado === 'cargando'"
-        class="flex items-center gap-3 rounded-xl border border-line bg-surface-muted p-6 text-ink-muted"
+        class="flex items-center gap-3 border border-line bg-surface-muted p-6 text-ink-muted"
         role="status"
       >
         <span
-          class="size-5 animate-spin rounded-full border-2 border-line border-t-brand-600"
+          class="size-5 animate-spin rounded-full border-2 border-line border-t-accent"
           aria-hidden="true"
         />
         <span>Cargando la serie de inflación…</span>
@@ -101,14 +117,16 @@ onMounted(cargar)
       <!-- Error -->
       <div
         v-else-if="estado === 'error'"
-        class="rounded-xl border border-red-300 bg-red-50 p-6 text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
+        class="border border-line bg-surface-muted p-8"
         role="alert"
       >
-        <h2 class="font-semibold">No se pudo cargar la información</h2>
-        <p class="mt-2 text-sm">{{ mensajeError }}</p>
+        <h2 class="font-serif text-2xl font-semibold tracking-tight">
+          No se pudo cargar la información
+        </h2>
+        <p class="mt-3 text-sm text-ink-muted">{{ mensajeError }}</p>
         <button
           type="button"
-          class="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700"
+          class="mt-6 border border-accent px-4 py-2 text-sm font-medium text-accent transition hover:bg-accent hover:text-surface"
           @click="cargar"
         >
           Reintentar
@@ -116,47 +134,75 @@ onMounted(cargar)
       </div>
 
       <!-- Listo -->
-      <div v-else class="space-y-6">
-        <div class="grid gap-4 sm:grid-cols-2">
+      <div v-else class="space-y-12">
+        <section class="grid gap-4">
           <article
-            v-for="tarjeta in tarjetas"
+            v-for="tarjeta in tarjetas.slice(0, 1)"
             :key="tarjeta.etiqueta"
-            class="rounded-xl border border-line bg-surface p-5"
+            class="border-b border-line pb-8"
           >
-            <p class="text-sm text-ink-muted">{{ tarjeta.etiqueta }}</p>
-            <p class="mt-2 break-words text-2xl font-semibold tabular-nums">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
+              {{ tarjeta.etiqueta }}
+            </p>
+            <p
+              class="mt-4 font-serif text-5xl leading-none font-semibold break-words tabular-nums sm:text-6xl"
+            >
               {{ tarjeta.valor }}
             </p>
-            <p class="mt-1 text-xs text-ink-muted">{{ tarjeta.detalle }}</p>
+            <p class="mt-3 text-sm text-ink-muted">{{ tarjeta.detalle }}</p>
           </article>
-        </div>
 
-        <section class="rounded-xl border border-line bg-surface-muted p-5 text-sm">
-          <h2 class="font-semibold">Cifras de control</h2>
-          <dl class="mt-3 grid gap-2 sm:grid-cols-2">
-            <div class="flex justify-between gap-4">
-              <dt class="text-ink-muted">Año inicial</dt>
-              <dd class="tabular-nums">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <article
+              v-for="tarjeta in tarjetas.slice(1)"
+              :key="tarjeta.etiqueta"
+              class="border-t border-line pt-5"
+            >
+              <p class="text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
+                {{ tarjeta.etiqueta }}
+              </p>
+              <p class="mt-3 font-serif text-3xl leading-none font-semibold break-words tabular-nums">
+                {{ tarjeta.valor }}
+              </p>
+              <p class="mt-2 text-xs text-ink-muted">{{ tarjeta.detalle }}</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="border-t border-line pt-6">
+          <h2 class="text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">
+            Cifras de control
+          </h2>
+          <dl class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div class="border-t border-line pt-3">
+              <dt class="text-xs uppercase tracking-widest text-ink-muted">Año inicial</dt>
+              <dd class="mt-1 tabular-nums">
                 {{ resumenAnioInicial?.anio ?? '—' }} ·
                 {{ resumenAnioInicial?.completo ? 'completo' : 'incompleto' }} ·
                 {{ resumenAnioInicial?.mesesIncluidos ?? '—' }} meses
               </dd>
             </div>
-            <div class="flex justify-between gap-4">
-              <dt class="text-ink-muted">Dataset generado</dt>
-              <dd>{{ dataset?.generatedAt ?? '—' }}</dd>
+            <div class="border-t border-line pt-3">
+              <dt class="text-xs uppercase tracking-widest text-ink-muted">
+                Dataset generado
+              </dt>
+              <dd class="mt-1 tabular-nums">
+                {{ dataset ? formatearAnioMesDesdeIso(dataset.generatedAt) : '—' }}
+              </dd>
             </div>
-            <div class="flex justify-between gap-4">
-              <dt class="text-ink-muted">Licencia</dt>
-              <dd>{{ dataset?.licenseName ?? '—' }}</dd>
+            <div class="border-t border-line pt-3">
+              <dt class="text-xs uppercase tracking-widest text-ink-muted">Licencia</dt>
+              <dd class="mt-1">{{ dataset?.licenseName ?? '—' }}</dd>
             </div>
-            <div class="flex justify-between gap-4">
-              <dt class="text-ink-muted">Fuente</dt>
-              <dd>{{ dataset?.source ?? '—' }}</dd>
+            <div class="border-t border-line pt-3">
+              <dt class="text-xs uppercase tracking-widest text-ink-muted">Fuente</dt>
+              <dd class="mt-1">{{ dataset?.source ?? '—' }}</dd>
             </div>
           </dl>
         </section>
       </div>
     </main>
+
+    <AppFooter />
   </div>
 </template>
