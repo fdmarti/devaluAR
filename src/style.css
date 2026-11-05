@@ -38,8 +38,34 @@
   --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
 }
 
+html.dark {
+  --surface: #0b1120;
+  --surface-muted: #151d2e;
+
+  --ink: #e5e7eb;
+  --ink-muted: #9ca3af;
+
+  --line: #24304a;
+
+  --accent: #f0b45e;
+
+  --rise: #f87171;
+  --fall: #4ade80;
+
+  --brand-50: #10203a;
+  --brand-100: #12294b;
+  --brand-200: #143761;
+  --brand-300: #164a80;
+  --brand-400: #1a62a8;
+  --brand-500: #2b7fd0;
+  --brand-600: #4d9ae4;
+  --brand-700: #74b4ee;
+  --brand-800: #a3cef4;
+  --brand-900: #d2e6fa;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  html:not(.light) {
     --surface: #0b1120;
     --surface-muted: #151d2e;
 

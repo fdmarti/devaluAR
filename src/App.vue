@@ -15,7 +15,7 @@ import {
   formatYearMonthFromIso,
 } from './utils/format'
 import { SOURCE } from './constants/source'
-import { AppFooter, StatCard } from './components'
+import { AppFooter, AppHeader, StatCard } from './components'
 import type { InflationDataset, MonthSummary } from './types/inflation'
 import type { StatCardData } from './types/card'
 import { variationWithDifference } from './utils/diff'
@@ -129,6 +129,7 @@ onMounted(async () => {
 
 <template>
   <div class="flex min-h-screen flex-col bg-surface text-ink">
+    <AppHeader />
     <main class="mx-auto w-full max-w-4xl flex-1 px-6 py-16">
       <header class="mb-14 border-b border-line pb-10">
         <p class="text-xs font-semibold uppercase tracking-[0.35em] text-accent">
@@ -180,8 +181,8 @@ onMounted(async () => {
         <!-- Metrics -->
         <section class="grid gap-4 md:grid-cols-3">
           <StatCard v-for="card in cards" :key="card.title" :title="card.title" :value="card.value"
-            :subtitle="card.subtitle" :trend="card.trend"
-            :trend-description="card.trendDescription" :difference="card.difference" />
+            :subtitle="card.subtitle" :trend="card.trend" :trend-description="card.trendDescription"
+            :difference="card.difference" />
         </section>
 
         <!-- Control figures -->
