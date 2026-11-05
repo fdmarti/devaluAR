@@ -24,6 +24,10 @@ There is **no test runner and no linter configured** (no vitest, eslint, prettie
 - `src/assets/` is imported through Vite (`import heroImg from '../assets/hero.png'`); `public/` is served as-is (e.g. `/icons.svg#icon-id` sprite references).
 - `public/icons.svg` is an SVG sprite referenced via `<use href="/icons.svg#id">`.
 
+## Libraries
+
+- `@vueuse/core` is available. When an equivalent utility exists in VueUse, prefer it over custom implementations (composables, storage, OS preference detection, etc.).
+
 ## Spec-driven workflow (important)
 
 Two skills are installed in `.agents/skills/` (locked in `skills-lock.json`, sourced from `klerith/fernando-skills`):

@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { useTheme } from '../composables/useTheme'
+import { useDark } from '@vueuse/core'
 import Sun from './Icons/Sun.vue'
 import Moon from './Icons/Moon.vue'
 
-const { theme, toggle } = useTheme()
+const isDark = useDark({
+  valueDark: 'dark',
+  valueLight: 'light',
+})
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+}
 </script>
 
 <template>
@@ -13,8 +20,8 @@ const { theme, toggle } = useTheme()
     </span>
     <button type="button"
       class="rounded-lg border border-line p-2 text-ink transition hover:bg-surface-muted hover:cursor-pointer"
-      :aria-label="theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'" @click="toggle">
-      <Sun v-if="theme === 'light'" />
+      :aria-label="isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'" @click="toggleTheme">
+      <Sun v-if="!isDark" />
       <Moon v-else />
     </button>
   </header>
