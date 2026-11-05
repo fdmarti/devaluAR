@@ -27,6 +27,7 @@ There is **no test runner and no linter configured** (no vitest, eslint, prettie
 ## Libraries
 
 - `@vueuse/core` is available. When an equivalent utility exists in VueUse, prefer it over custom implementations (composables, storage, OS preference detection, etc.).
+- `vue-router` is used for SPA routing. Routes are defined in `src/router/routes.ts` and the router instance in `src/router/index.ts`. Views live in `src/views/` and shared layouts in `src/layouts/`. `App.vue` only contains the base layout (Header + `<RouterView />` + Footer).
 
 ## Spec-driven workflow (important)
 

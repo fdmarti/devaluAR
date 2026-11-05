@@ -31,15 +31,10 @@ const props = defineProps<{
       {{ props.title }}
     </p>
     <p
-      class="mt-3 flex items-baseline gap-2 font-serif text-4xl leading-none font-semibold break-words tabular-nums"
-    >
+      class="mt-3 flex items-baseline gap-2 font-serif text-4xl leading-none font-semibold wrap-break-word tabular-nums">
       <span>{{ props.value }}</span>
-      <TrendArrow
-        v-if="props.trend"
-        :trend="props.trend"
-        :description="props.trendDescription"
-        :difference="props.difference"
-      />
+      <TrendArrow v-if="props.trend" :trend="props.trend" :description="props.trendDescription"
+        :difference="props.difference" />
     </p>
     <p v-if="props.subtitle" class="mt-3 text-sm leading-relaxed text-ink-muted">
       {{ props.subtitle }}
