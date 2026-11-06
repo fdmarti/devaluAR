@@ -6,11 +6,11 @@ export const routes: RouteRecordRaw[] = [
     name: 'home',
     component: () => import('../views/Home.vue'),
   },
-  {
-    path: '/historial-precios',
-    name: 'historial-precios',
-    component: () => import('../views/HistorialPrecios.vue'),
-  },
+  // {
+  //   path: '/historial-precios',
+  //   name: 'historial-precios',
+  //   component: () => import('../views/HistorialPrecios.vue'),
+  // },
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',

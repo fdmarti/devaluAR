@@ -18,10 +18,10 @@ function toggleTheme() {
       devaluar
     </RouterLink>
     <nav class="flex items-center gap-4">
-      <RouterLink to="/" exact-active-class="underline underline-offset-4"
+      <!-- <RouterLink to="/" exact-active-class="underline underline-offset-4"
         class="text-sm text-ink-muted hover:text-ink">Home</RouterLink>
       <RouterLink to="/historial-precios" active-class="underline underline-offset-4"
-        class="text-sm text-ink-muted hover:text-ink">Historial de precios</RouterLink>
+        class="text-sm text-ink-muted hover:text-ink">Historial de precios</RouterLink> -->
     </nav>
     <button type="button"
       class="rounded-lg border border-line p-2 text-ink transition hover:bg-surface-muted hover:cursor-pointer"
